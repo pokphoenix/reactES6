@@ -19,6 +19,10 @@ export default {
   devServer: {
     contentBase: './src'
   },
+  node: {
+    net: "empty",
+    dns: "empty"
+  },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoErrorsPlugin()

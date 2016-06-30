@@ -7,17 +7,22 @@ import {browserHistory} from 'react-router';
 
 import fetch from 'isomorphic-fetch' ;
 
+import jwt from 'jsonwebtoken';
+const appKey = 'base64:Q6ERrj4q7NCiSD27kFQNrRkiJFS//jIHbcXHzF4+3qQ=';
+
 class CoursesPage extends React.Component {
     constructor(props,context){
         super(props,context);
 
         this.state = {
-            userId : 0
+            userId : 0,
+            userToken : ""
         };
 
         this.redirectToAddCoursePage = this.redirectToAddCoursePage.bind(this);
-        this.testAjaxLogin = this.testAjaxLogin.bind(this);
-        this.testAjax = this.testAjax.bind(this);
+        this.Login = this.Login.bind(this);
+        this.Logout = this.Logout.bind(this);
+        // this.postAjax = this.postAjax.bind(this);
     }
 
     // courseRow(course, index) {
@@ -28,21 +33,137 @@ class CoursesPage extends React.Component {
         browserHistory.push('/course');
     }
 
-    testAjaxLogin(){
-        fetch('http://localhost/semi_server_pok/public/api/auth/login?username=admin&password=admin1234')
+    Login(){
+
+        let params = {
+            username: 'admin',
+            password: 'admin1234'
+        };
+
+        var request = {
+            method: 'POST',
+            // headers: headers,
+            body: jwt.sign({data: params}, appKey)
+        };
+
+        fetch('http://localhost/semi_server_pok/public/api/login',request)
             .then((response) => response.json())
-            .then((pages) =>
-                this.setState({ userId : pages.datas.data.id })
-            );
+            .then((pages) => {
+                    if (typeof pages.datas.data.token != 'undefined'){
+                        console.log('Token : ',pages.datas.data.token);
+                        this.setState({ userToken : pages.datas.data.token });
+                    }
+                }
+            )
+            .catch(function(error) {
+                console.log('request failed', error)
+            });
+
     }
 
-    testAjax(){
-        fetch('http://localhost/semi_server_pok/public/api/auth/test?userid='+this.state.userId)
+    Logout(){
+        console.log('Token : ',this.state.userToken);
+
+        let params = {
+            userToken: this.state.userToken,
+            passdata: 'test'
+        };
+
+        // let headers = {
+        //     'Authorization': 'Bearer '+this.state.userToken
+        // };
+
+        var request = {
+            method: 'POST',
+            // headers: headers,
+            body: jwt.sign({data: params}, appKey)
+        };
+
+        fetch('http://localhost/semi_server_pok/public/api/auth/logout',request)
             .then((response) => response.json())
-            .then((pages) =>
-                console.log(pages)
-            );
+            .then((pages) => {
+                    if (typeof pages.datas.data.token != 'undefined'){
+                        console.log(pages);
+                        this.setState({ userToken : pages.datas.data.id });
+                    }
+                }
+            )
+            .catch(function(error) {
+                console.log('request failed', error)
+            });
     }
+
+    postAjax(){
+
+        // let JWT_SECRET = "base64:fh5CuDzXIPeRBiSks+ys649A7sJLMm+1B4uhxMnuBBM=" ;
+        //
+        // let data = {
+        //     email: "admin@pos.com",
+        //     password: "admin1234"
+        // };
+        // let token = jwt.sign(u, JWT_SECRET, {
+        //     expiresIn: 60 * 60  // expires in 1 hours
+        // });
+        //
+        // console.log(token);
+
+        let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImlzcyI6Imh0dHA6XC9cL2xvY2FsaG9zdFwvcmVzdEFwaVwvcHVibGljXC9hcGlcL2F1dGhlbnRpY2F0ZSIsImlhdCI6MTQ2NzI2MTg5OSwiZXhwIjoxNDY3MjY1NDk5LCJuYmYiOjE0NjcyNjE4OTksImp0aSI6Ijk2MDM4ZTk3N2UyYTVhMzM5ZGI2N2E4ZGEwMjU3YmRiIn0.RDiXLnX_6zUaq1XPPNZbphOnodYiCwUGFEh-nE2UqBI";
+
+
+        let params = {
+            name: 'admin',
+            password: 'admin1234'
+        };
+
+        let headers =  {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        };
+
+        var formData = new FormData();
+
+        for (var k in params) {
+            formData.append(k, params[k]);
+        }
+        
+        var request = {
+            method: 'POST',
+            headers: headers,
+            body: jwt.sign({data: params}, appKey)
+        };
+
+
+
+        fetch('http://localhost/restApi/public/api/decode', request)
+            .then((response) => response.json())
+            .then((pages) => {
+                    if (typeof pages.token != 'undefined'){
+                        console.log(pages)
+                    }
+                }
+            )
+            .catch(function(error) {
+                console.log('request failed', error)
+            });
+
+
+        // fetch('http://localhost/restApi/public/authenticate', {
+        //     method: 'post',
+        //     body: JSON.stringify({
+        //         config_name: 'default',
+        //         first_name: this.state.first_name,
+        //         last_name: this.state.last_name,
+        //         email: this.state.email,
+        //         password: this.state.password,
+        //         password_confirmation: this.state.password_confirmation,
+        //     }).replace(/{|}/gi, ""),
+        //     headers: {
+        //         Authorization: 'Bearer ' + token
+        //     }
+        // })
+
+    }
+
 
     render(){
         const {courses} = this.props;
@@ -58,12 +179,12 @@ class CoursesPage extends React.Component {
                 <input type="button"
                        value="Login"
                        className="btn btn-success"
-                       onClick={this.testAjaxLogin}/>
+                       onClick={this.Login}/>
 
                 <input type="button"
-                       value="test AJAX"
+                       value="Logout"
                        className="btn btn-Info"
-                       onClick={this.testAjax}/>
+                       onClick={this.Logout}/>
 
                <CourseList  courses={courses} />
             </div>
