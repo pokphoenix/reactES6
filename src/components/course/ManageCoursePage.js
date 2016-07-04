@@ -9,6 +9,8 @@ class ManageCoursePage extends React.Component {
     constructor(props, context){
         super(props, context);
 
+        console.log('constructor');
+
         this.state ={
             course: Object.assign({}, props.course),
             errors: {},
@@ -19,12 +21,14 @@ class ManageCoursePage extends React.Component {
     }
 
     componentWillReceiveProps(nextProps){
+        console.log('componentWillReceiveProps');
         if(this.props.course.id != nextProps.course.id){
             this.setState({course: Object.assign({}, nextProps.course)});
         }
     }
 
     updateCourseState(event){
+        console.log('updateCourseState');
         const field = event.target.name;
         let course = this.state.course;
         course[field] = event.target.value;
@@ -46,7 +50,7 @@ class ManageCoursePage extends React.Component {
 
     saveCourse(event){
         event.preventDefault();
-
+        console.log('saveCourse');
         // if(!this.courseFormIsValid()){
         //     return;
         // }

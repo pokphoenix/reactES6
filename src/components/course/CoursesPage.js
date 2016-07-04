@@ -14,15 +14,23 @@ class CoursesPage extends React.Component {
     constructor(props,context){
         super(props,context);
 
+        let userToken = localStorage.getItem('userToken');
+        console.log('Token localStorage : ',userToken);
+        if (typeof userToken == 'undefined' || userToken==null ||  userToken=="" ){
+             console.log('Token localStorage undefined : ',userToken);
+            userToken = ""
+        }
+
         this.state = {
             userId : 0,
-            userToken : ""
+            userToken : userToken
         };
+        console.log('Token state : ', this.state.userToken);
 
         this.redirectToAddCoursePage = this.redirectToAddCoursePage.bind(this);
         this.Login = this.Login.bind(this);
         this.Logout = this.Logout.bind(this);
-        // this.postAjax = this.postAjax.bind(this);
+        this.ChangePass = this.ChangePass.bind(this);
     }
 
     // courseRow(course, index) {
@@ -49,16 +57,20 @@ class CoursesPage extends React.Component {
         fetch('http://localhost/semi_server_pok/public/api/login',request)
             .then((response) => response.json())
             .then((pages) => {
+                    if (pages.status == "error"){
+                        alert(pages.message);
+                    }
                     if (typeof pages.datas.data.token != 'undefined'){
-                        console.log('Token : ',pages.datas.data.token);
+                        // console.log('Token : ',pages.datas.data.token);
                         this.setState({ userToken : pages.datas.data.token });
+                        // Put the object into storage
+                        localStorage.setItem('userToken', pages.datas.data.token );
                     }
                 }
             )
             .catch(function(error) {
                 console.log('request failed', error)
             });
-
     }
 
     Logout(){
@@ -69,23 +81,24 @@ class CoursesPage extends React.Component {
             passdata: 'test'
         };
 
-        // let headers = {
-        //     'Authorization': 'Bearer '+this.state.userToken
-        // };
+        let headers = {
+            'Authorization': 'Bearer '+this.state.userToken
+        };
 
         var request = {
             method: 'POST',
-            // headers: headers,
+            headers: headers,
             body: jwt.sign({data: params}, appKey)
         };
 
         fetch('http://localhost/semi_server_pok/public/api/auth/logout',request)
             .then((response) => response.json())
             .then((pages) => {
-                    if (typeof pages.datas.data.token != 'undefined'){
-                        console.log(pages);
-                        this.setState({ userToken : pages.datas.data.id });
+                    if (pages.status == "error"){
+                        alert(pages.message);
                     }
+                    localStorage.setItem('userToken', "" );
+
                 }
             )
             .catch(function(error) {
@@ -93,6 +106,49 @@ class CoursesPage extends React.Component {
             });
     }
 
+    ChangePass(){
+        
+        if (typeof this.state.userToken == 'undefined' || this.state.userToken == null ||  this.state.userToken == "" ){
+           alert('Login Please !!!'); return false;
+        }
+
+        var decoded = jwt.decode(this.state.userToken);
+        let dateExp = decoded.exp;
+        let dateNow =  Math.floor( new Date().getTime()/ 1000 ) ;
+
+        if ( dateNow > dateExp ){
+            alert('Token Expire Login Please!!!'); return false;
+        }
+
+        let params = {
+            userToken: this.state.userToken,
+            oldPass: 'admin1234',
+            newPass: '1234',
+            confirmPass: '1234'
+        };
+
+
+        var request = {
+            method: 'POST',
+            // headers: headers,
+            body: jwt.sign({data: params}, appKey)
+        };
+
+        fetch('http://localhost/semi_server_pok/public/api/auth/changepass',request)
+            .then((response) => response.json())
+            .then((pages) => {
+                    if (pages.status == "error"){
+                        alert(pages.message);
+                    }else if (typeof pages.datas.data.token != 'undefined'){
+                        console.log(pages);
+                    }
+                }
+            )
+            .catch(function(error) {
+                console.log('request failed', error)
+            });
+    }
+    
     postAjax(){
 
         // let JWT_SECRET = "base64:fh5CuDzXIPeRBiSks+ys649A7sJLMm+1B4uhxMnuBBM=" ;
@@ -181,6 +237,13 @@ class CoursesPage extends React.Component {
                        className="btn btn-success"
                        onClick={this.Login}/>
 
+
+                &nbsp;
+                <input type="button"
+                       value="ChangePass"
+                       className="btn btn-Info"
+                       onClick={this.ChangePass}/>
+                &nbsp;
                 <input type="button"
                        value="Logout"
                        className="btn btn-Info"
